@@ -52,19 +52,15 @@ const Register = () => {
    */
 
   const handleRegister = async () => {
-    if (validateInput(formData)) {
-      setLoading(true);
+    
       try {
+        if (validateInput(formData)) {
+          setLoading(true);
         const response = await axios.post(
           `${config.endpoint}/auth/register`,
           {username:formData.username,password:formData.password}
         );
-
-        if (response.status === 201) {
-          enqueueSnackbar("Registration successful", { variant: "success" });
-          // Redirect or perform any other action after successful registration
-        } else {
-          enqueueSnackbar("Registration failed", { variant: "error" });
+          enqueueSnackbar("Registered successfully", { variant: "success" });
         }
       } catch (error) {
         if(error.response && error.response.status === 400){
@@ -74,11 +70,9 @@ const Register = () => {
           enqueueSnackbar("An error occurred", { variant: "error" });
         }
       }
-      setLoading(false);
-    }
-    else{
-      return;
-    }
+      finally{
+        setLoading(false);
+      }
   };
 
     // TODO: CRIO_TASK_MODULE_REGISTER - Implement user input validation logic
@@ -104,31 +98,31 @@ const Register = () => {
     const { username, password, confirmPassword } = data;
 
     if (!username) {
-      enqueueSnackbar("Username is a required field", { variant: "error" });
+      enqueueSnackbar("Username is a required field", { variant: "warning" });
       return false;
     }
 
     if (username.length < 6) {
       enqueueSnackbar("Username must be at least 6 characters", {
-        variant: "error",
+        variant: "warning",
       });
       return false;
     }
 
     if (!password) {
-      enqueueSnackbar("Password is a required field", { variant: "error" });
+      enqueueSnackbar("Password is a required field", { variant: "warning" });
       return false;
     }
 
     if (password.length < 6) {
       enqueueSnackbar("Password must be at least 6 characters", {
-        variant: "error",
+        variant: "warning",
       });
       return false;
     }
 
     if (password !== confirmPassword) {
-      enqueueSnackbar("Passwords do not match", { variant: "error" });
+      enqueueSnackbar("Passwords do not match", { variant: "warning" });
       return false;
     }
 
@@ -178,14 +172,15 @@ const Register = () => {
             value={formData.confirmPassword}
             onChange={handleInputChange}
           />
+          {loading ? <div justifyContent="center" alignItems="center"><CircularProgress /></div> : 
           <Button
             className="button"
             variant="contained"
             onClick={handleRegister}
             disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : "Register Now"}
-          </Button>
+            "Register Now"
+          </Button>}
           <p className="secondary-action">
             Already have an account?{" "}
             <a className="link" href="#">

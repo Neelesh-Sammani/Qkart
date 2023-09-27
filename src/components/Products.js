@@ -10,6 +10,7 @@ import axios from "axios";
 import { useSnackbar } from "notistack";
 import React, { useEffect, useState } from "react";
 import { config } from "../App";
+import { Link } from "react-router-dom";
 import Footer from "./Footer";
 import Header from "./Header";
 import "./Products.css";
@@ -27,7 +28,8 @@ const Products = () => {
   return (
     <div>
       <Header>
-
+       <Link to="/home">Home</Link>
+       <Link to="/register">Register</Link>
       </Header>
 
        <Grid container>

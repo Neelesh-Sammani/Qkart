@@ -8,7 +8,9 @@ import { ThemeProvider } from "@mui/system";
 import theme from "./theme";
 
 ReactDOM.render(
-  <React.StrictMode>
+  <BrowserRouter>
+    <React.StrictMode>
+      <ThemeProvider theme={theme}>
         <SnackbarProvider
           maxSnack={1}
           anchorOrigin={{
@@ -19,6 +21,8 @@ ReactDOM.render(
         >
           <App />
         </SnackbarProvider>
-  </React.StrictMode>,
-   document.getElementById('root')
+      </ThemeProvider>
+    </React.StrictMode>
+  </BrowserRouter>,
+  document.getElementById("root")
 );

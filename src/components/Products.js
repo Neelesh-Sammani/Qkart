@@ -4,16 +4,18 @@ import {
   Grid,
   InputAdornment,
   TextField,
+  Typography,
 } from "@mui/material";
 import { Box } from "@mui/system";
 import axios from "axios";
 import { useSnackbar } from "notistack";
 import React, { useEffect, useState } from "react";
 import { config } from "../App";
-import { Link } from "react-router-dom";
+//import { Link } from "react-router-dom";
 import Footer from "./Footer";
 import Header from "./Header";
 import "./Products.css";
+import ProductCard from "./ProductCard";
 
 // Definition of Data Structures used
 /**
@@ -29,6 +31,14 @@ import "./Products.css";
 
 
 const Products = () => {
+  const { enqueueSnackbar } = useSnackbar();
+  const [isLoading,setIsLoading] = useState(true);
+  const [products,setProducts] = useState([]);
+  const [debounceTimeout,setDebounceTimeout] = useState(null);
+
+  useEffect(()=>{
+    performAPICall()
+  },[])
 
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Fetch products data and store it
   /**
@@ -68,6 +78,14 @@ const Products = () => {
    * }
    */
   const performAPICall = async () => {
+    try{
+      let res=await axios.get(`${config.endpoint}/products`);
+      setProducts(res.data);
+    }catch(e){
+      enqueueSnackbar("Could not fetch products. Check that the backend is running, reachable and return valid JSON.",{variant:'error'})
+    }finally{
+      setIsLoading(false);
+    }
   };
 
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Implement search logic
@@ -85,6 +103,24 @@ const Products = () => {
    *
    */
   const performSearch = async (text) => {
+    try{
+      let res = await axios.get(`${config.endpoint}/products/search?value=${text}`)
+      setProducts(res.data)
+    }catch(e){
+      if(e.response){
+        if(e.response.status===404){
+          setProducts([]);
+          return;
+        }
+        if(e.response.status===500){
+          enqueueSnackbar(e.response.data.message,{variant:'error'})
+          return;
+        }
+        else{
+          enqueueSnackbar("Could not fetch products. Check that the backend is running, reachable and return valid JSON.",{variant:'error'})
+        }
+      }
+    }
   };
 
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Optimise API calls with debounce search implementation
@@ -100,19 +136,44 @@ const Products = () => {
    *
    */
   const debounceSearch = (event, debounceTimeout) => {
+
+    let timerId = setTimeout(()=>{
+      performSearch(event.target.value)
+    },800)
+
+    setDebounceTimeout(timerId)
   };
 
+  useEffect(()=>{
+    return ()=>{
+      clearTimeout(debounceTimeout)
+    }
+  },[debounceTimeout])
 
 
-
-
+console.log(">",products);
 
 
   return (
     <div>
       <Header>
         {/* TODO: CRIO_TASK_MODULE_PRODUCTS - Display search bar in the header for Products page */}
-
+        <TextField
+        className="search-desktop"
+        size="small"
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <Search color="primary" />
+            </InputAdornment>
+          ),
+        }}
+        placeholder="Search for items/categories"
+        name="search"
+        onChange={(e)=>{
+          debounceSearch(e,debounceTimeout)
+        }}
+      />
       </Header>
 
       {/* Search view for mobiles */}
@@ -129,6 +190,9 @@ const Products = () => {
         }}
         placeholder="Search for items/categories"
         name="search"
+        onChange={(e)=>{
+          debounceSearch(e,debounceTimeout)
+        }}
       />
        <Grid container>
          <Grid item className="product-grid">
@@ -140,6 +204,30 @@ const Products = () => {
            </Box>
          </Grid>
        </Grid>
+
+       {isLoading?
+
+       <Box className="loading">
+        <CircularProgress />
+        <Typography variant='body1'>Loading Products...</Typography>
+       </Box>
+
+       :
+       
+       (products.length?
+        <Grid container spacing={2} marginY={1} paddingX={1}>
+        {products.map(product =><Grid key={product._id} item xs={6} md={3}>
+        <ProductCard
+       product={product} 
+       />
+        </Grid>)}
+       </Grid>:
+
+       <Box className="loading">
+       <SentimentDissatisfied />
+       <Typography variant='body1'>No products found</Typography>
+      </Box>
+      )}
       <Footer />
     </div>
   );

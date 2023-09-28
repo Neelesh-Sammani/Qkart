@@ -142,7 +142,7 @@ const Login = () => {
     <Box
       display="flex"
       flexDirection="column"
-      justifycontent="space-between"
+      justifyContent="space-between"
       minHeight="100vh"
     >
       <Header hasHiddenAuthButtons />

@@ -28,8 +28,7 @@ const Products = () => {
   return (
     <div>
       <Header>
-       <Link to="/home">Home</Link>
-       <Link to="/register">Register</Link>
+        
       </Header>
 
        <Grid container>

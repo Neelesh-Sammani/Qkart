@@ -22,6 +22,16 @@ import ProductCard from "./ProductCard";
  * @typedef {Object} Product - Data on product available to buy
  * 
  * @property {string} name - The name or title of the product
+import Footer from "./Footer";
+import Header from "./Header";
+import "./Products.css";
+
+
+/**
+ * @typedef {Object} CartItem -  - Data on product added to cart
+ * 
+ * @property {string} name - The name or title of the product in cart
+ * @property {string} qty - The quantity of product added to cart
  * @property {string} category - The category that the product belongs to
  * @property {number} cost - The price to buy the product
  * @property {number} rating - The aggregate rating of the product (integer out of five)

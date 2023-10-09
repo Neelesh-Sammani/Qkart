@@ -210,6 +210,7 @@ const Products = () => {
   try {
     // TODO: CRIO_TASK_MODULE_CART - Pass Bearer token inside "Authorization" header to get data from "GET /cart" API and return the response data
     const response = await axios.get(`${config.endpoint}/cart`,{headers:{Authorization:`Bearer ${token}`}});
+    console.log(response.data);
     return response.data;
   } catch (e) {
     if (e.response && e.response.status === 400) {

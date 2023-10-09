@@ -61,6 +61,7 @@ const Login = () => {
         persistLogin(token, username, balance);
         enqueueSnackbar("Logged in successfully", { variant: "success" });
         history.push("/");
+        //window.location.reload();
       } else {
         enqueueSnackbar("Something went wrong. Check that the backend is running, reachable, and returns valid JSON.", { variant: "error" });
       }

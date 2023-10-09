@@ -17,6 +17,7 @@ import Cart, { getTotalCartValue, generateCartItemsFrom } from "./Cart";
 import "./Checkout.css";
 import Footer from "./Footer";
 import Header from "./Header";
+import products from "./Products"
 
 // Definition of Data Structures used
 /**
@@ -42,7 +43,7 @@ import Header from "./Header";
  * @property {string} productId - Unique ID for the product
  */
 
-
+//const items = generateCartItemsFrom(cartItems,products)
 
 const Checkout = () => {
 
@@ -83,10 +84,10 @@ const Checkout = () => {
 
             <Box my="1rem">
               <Typography>Wallet</Typography>
-              <Typography>
+              {/* <Typography>
                 Pay ${getTotalCartValue(items)} of available $
                 {localStorage.getItem("balance")}
-              </Typography>
+              </Typography> */}
             </Box>
 
             <Button
@@ -98,7 +99,7 @@ const Checkout = () => {
           </Box>
         </Grid>
         <Grid item xs={12} md={3} bgcolor="#E9F5E1">
-          <Cart isReadOnly products={products} items={items} />
+          {/* <Cart isReadOnly products={products} items={items} /> */}
         </Grid>
       </Grid>
       <Footer />

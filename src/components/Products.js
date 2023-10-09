@@ -16,15 +16,17 @@ import Footer from "./Footer";
 import Header from "./Header";
 import "./Products.css";
 import ProductCard from "./ProductCard";
+import Cart from "./Cart";
+//import Card from '@mui/material/Card';
+import { generateCartItemsFrom } from "./Cart";
+//import CardContent from '@mui/material/CardContent';
 
 // Definition of Data Structures used
 /**
  * @typedef {Object} Product - Data on product available to buy
  * 
  * @property {string} name - The name or title of the product
-import Footer from "./Footer";
-import Header from "./Header";
-import "./Products.css";
+ */
 
 
 /**
@@ -45,10 +47,12 @@ const Products = () => {
   const [isLoading,setIsLoading] = useState(true);
   const [products,setProducts] = useState([]);
   const [debounceTimeout,setDebounceTimeout] = useState(null);
+  const [filteredProducts,setFilteredProducts] = useState([]);
+  const [items,setItems] = useState([]);
 
-  useEffect(()=>{
-    performAPICall()
-  },[])
+
+  const token = localStorage.getItem('token');
+  
 
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Fetch products data and store it
   /**
@@ -89,8 +93,10 @@ const Products = () => {
    */
   const performAPICall = async () => {
     try{
-      let res=await axios.get(`${config.endpoint}/products`);
-      setProducts(res.data);
+      let response =await axios.get(`${config.endpoint}/products`);
+      setProducts(response.data);
+      setFilteredProducts(response.data);
+      return response.data;
     }catch(e){
       enqueueSnackbar("Could not fetch products. Check that the backend is running, reachable and return valid JSON.",{variant:'error'})
     }finally{
@@ -114,12 +120,13 @@ const Products = () => {
    */
   const performSearch = async (text) => {
     try{
-      let res = await axios.get(`${config.endpoint}/products/search?value=${text}`)
-      setProducts(res.data)
+      let response = await axios.get(`${config.endpoint}/products/search?value=${text}`)
+      setFilteredProducts(response.data);
+      return response.data;
     }catch(e){
       if(e.response){
         if(e.response.status===404){
-          setProducts([]);
+          setFilteredProducts([]);
           return;
         }
         if(e.response.status===500){
@@ -147,22 +154,138 @@ const Products = () => {
    */
   const debounceSearch = (event, debounceTimeout) => {
 
+    if(debounceTimeout){
+      clearTimeout(debounceTimeout);
+    }
+
     let timerId = setTimeout(()=>{
       performSearch(event.target.value)
-    },800)
+    },500)
 
     setDebounceTimeout(timerId)
   };
 
   useEffect(()=>{
-    return ()=>{
-      clearTimeout(debounceTimeout)
+    const onLoadHandler = async () => {
+      const productsData = await performAPICall();
+      const cartData = await fetchCart(token);
+      const cartDetails = generateCartItemsFrom(cartData,productsData);
+      setItems(cartDetails);
+      //console.log(cartDetails);
     }
-  },[debounceTimeout])
+    onLoadHandler();
+  }, []);
+
+/**
+   * Perform the API call to fetch the user's cart and return the response
+   *
+   * @param {string} token - Authentication token returned on login
+   *
+   * @returns { Array.<{ productId: string, qty: number }> | null }
+   *    The response JSON object
+   *
+   * Example for successful response from backend:
+   * HTTP 200
+   * [
+   *      {
+   *          "productId": "KCRwjF7lN97HnEaY",
+   *          "qty": 3
+   *      },
+   *      {
+   *          "productId": "BW0jAAeDJmlZCF8i",
+   *          "qty": 1
+   *      }
+   * ]
+   *
+   * Example for failed response from backend:
+   * HTTP 401
+   * {
+   *      "success": false,
+   *      "message": "Protected route, Oauth2 Bearer token not found"
+   * }
+   */
+ const fetchCart = async (token) => {
+  if (!token) return;
+
+  try {
+    // TODO: CRIO_TASK_MODULE_CART - Pass Bearer token inside "Authorization" header to get data from "GET /cart" API and return the response data
+    const response = await axios.get(`${config.endpoint}/cart`,{headers:{Authorization:`Bearer ${token}`}});
+    return response.data;
+  } catch (e) {
+    if (e.response && e.response.status === 400) {
+      enqueueSnackbar(e.response.data.message, { variant: "error" });
+    } else {
+      enqueueSnackbar(
+        "Could not fetch cart details. Check that the backend is running, reachable and returns valid JSON.",
+        {
+          variant: "error"
+        }
+      );
+    }
+    return null;
+  }
+};
+/**
+ * Return if a product already is present in the cart
+ *
+ * @param { Array.<{ productId: String, quantity: Number }> } items
+ *    Array of objects with productId and quantity of products in cart
+ * @param { String } productId
+ *    Id of a product to be checked
+ *
+ * @returns { Boolean }
+ *    Whether a product of the given "productId" exists in the "items" array
+ *
+ */
+ const isItemInCart = (items, productId) => {
+  return items.find((item) => item.productId === productId && item.qty > 0) ? true : false;
+};
 
 
-console.log(">",products);
+const addToCart = async (
+  token,
+  items,
+  products,
+  productId,
+  qty,
+  options = { preventDuplicate: false }
+) => {
 
+  try {
+    if (!token) {
+      enqueueSnackbar("Login to add an item to the Cart", { variant: 'error' });
+      return;
+    }
+
+    if (options.preventDuplicate && isItemInCart(items, productId)) {
+      enqueueSnackbar("Item already in cart. Use the cart sidebar to update quantity or remove item.", { variant: 'warning' });
+      return;
+    }
+    const response = await axios.post(`${config.endpoint}/cart`,{"productId":productId,"qty":qty}, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  
+    const cartItems = generateCartItemsFrom(response.data,products);
+    setItems(cartItems);
+    return response.data;
+
+  } catch (e) {
+    if (e.response && e.response.status === 400) {
+      enqueueSnackbar(e.response.data.message, { variant: "error" });
+    } else {
+      enqueueSnackbar(
+        "Could not fetch cart details. Check that the backend is running, reachable and returns valid JSON.",
+        {
+          variant: "error",
+        }
+      );
+    }
+    return null;
+  }
+};
 
   return (
     <div>
@@ -204,40 +327,45 @@ console.log(">",products);
           debounceSearch(e,debounceTimeout)
         }}
       />
-       <Grid container>
-         <Grid item className="product-grid">
-           <Box className="hero">
-             <p className="hero-heading">
-               India’s <span className="hero-highlight">FASTEST DELIVERY</span>{" "}
-               to your door step
-             </p>
-           </Box>
-         </Grid>
+      
+      <Grid container>
+       <Grid item xs={12} md={token && products.length > 0 ? 9 : 12} className="product-grid">
+         <Box className="hero">
+           <p className="hero-heading">
+             India’s <span className="hero-highlight">FASTEST DELIVERY</span>{" "}
+             to your door step
+           </p>
+         </Box>
+         {isLoading?(
+            <Box className="loading">
+            <CircularProgress />
+            <Typography variant='body1'>Loading Products...</Typography>
+            </Box>)
+
+          :
+          (<Grid container spacing={2} marginY={1} paddingX={1}>
+            {filteredProducts.length?
+              (filteredProducts.map((product) =>(
+              <Grid key={product._id} item xs={6} md={3}>
+                <ProductCard 
+                  product={product}
+                  handleAddToCart={async () => {await addToCart(token,items,products,product._id,1,{preventDuplicate:true});}} 
+                />
+              </Grid>)))
+              :(
+              <Box className="loading">
+                <SentimentDissatisfied color="action"/>
+                <Typography variant='body1'>No products found</Typography>
+              </Box>
+            )}
+          </Grid>)}
        </Grid>
-
-       {isLoading?
-
-       <Box className="loading">
-        <CircularProgress />
-        <Typography variant='body1'>Loading Products...</Typography>
-       </Box>
-
-       :
-       
-       (products.length?
-        <Grid container spacing={2} marginY={1} paddingX={1}>
-        {products.map(product =><Grid key={product._id} item xs={6} md={3}>
-        <ProductCard
-       product={product} 
-       />
-        </Grid>)}
-       </Grid>:
-
-       <Box className="loading">
-       <SentimentDissatisfied />
-       <Typography variant='body1'>No products found</Typography>
-      </Box>
-      )}
+       {token?(
+        <Grid item xs={12} md={3} bgcolor="#E9F5E1">
+          <Cart products={products} items={items} handleQuantity={addToCart}/>
+        </Grid> 
+       ):null}
+      </Grid>
       <Footer />
     </div>
   );

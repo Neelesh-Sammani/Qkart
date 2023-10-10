@@ -363,7 +363,7 @@ const addToCart = async (
        </Grid>
        {token?(
         <Grid item xs={12} md={3} bgcolor="#E9F5E1">
-          <Cart products={products} items={items} handleQuantity={addToCart}/>
+          <Cart products={products} items={items} handleQuantity={addToCart} hasCheckoutBtn />
         </Grid> 
        ):null}
       </Grid>

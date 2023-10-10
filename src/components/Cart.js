@@ -76,10 +76,14 @@ export const getTotalCartValue = (items = []) => {
   }, 0);
 };
 
-
+export const getTotalItems = (items = []) => {
+  if(!items.length) return 0;
+  const total = items.map((item) => item.qty).reduce((total,n) => total+n);
+  return total;
+};
 /**
  * Component to display the current quantity for a product and + and - buttons to update product quantity on cart
- * 
+ *  
  * @param {Number} value
  *    Current quantity of product in cart
  * 
@@ -94,10 +98,14 @@ export const getTotalCartValue = (items = []) => {
  * 
  */
 const ItemQuantity = ({
+  isReadOnly,
   value,
   handleAdd,
   handleDelete,
 }) => {
+  if (isReadOnly){
+    return <Box>Qty:{value}</Box>
+  }
   return (
     <Stack direction="row" alignItems="center">
       <IconButton size="small" color="primary" onClick={handleDelete}>
@@ -133,6 +141,8 @@ const Cart = ({
   products,
   items = [],
   handleQuantity,
+  hasCheckoutBtn = false,
+  isReadOnly = false
 }) => {
   const history = useHistory();
 
@@ -185,6 +195,7 @@ const Cart = ({
         >
         <ItemQuantity
         // Add required props by checking implementation
+            isReadOnly = {isReadOnly}
             value={item.qty}
             handleAdd={async () => {await handleQuantity(token,items,products,item.productId, item.qty + 1);}}
             handleDelete={async () => {await handleQuantity(token,items,products,item.productId, item.qty - 1);}}
@@ -216,7 +227,7 @@ const Cart = ({
           </Box>
         </Box>
 
-        <Box display="flex" justifyContent="flex-end" className="cart-footer">
+        {hasCheckoutBtn && (<Box display="flex" justifyContent="flex-end" className="cart-footer">
           <Button
             color="primary"
             variant="contained"
@@ -226,8 +237,27 @@ const Cart = ({
           >
             Checkout
           </Button>
-        </Box>
+        </Box>)}
       </Box>
+      {isReadOnly && (<Box className = "cart" padding="1rem">
+        <h2>Order Details</h2>
+        <Box className = "cart-row">
+          <p>Products</p>
+          <p>{getTotalItems(items)}</p>
+        </Box>
+        <Box className = "cart-row">
+          <p>Subtotal</p>
+          <p>${getTotalCartValue(items)}</p>
+        </Box>
+        <Box className = "cart-row">
+          <p>Shipping Charges</p>
+          <p>$0</p>
+        </Box>
+        <Box className = "cart-row" fontSize = "1.25rem" fontWeight = "700">
+          <p>Total</p>
+          <p>${getTotalCartValue(items)}</p>
+        </Box>
+      </Box>)}
     </>
   );
 };
